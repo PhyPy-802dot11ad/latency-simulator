@@ -75,7 +75,7 @@ class Decoder(Functionality):
         self.cw_to_process -= 1
         if self.cw_to_process == 0:
             if self.cw_padding > 0:
-                dataword = codeword[:-self.cw_padding] # Remove padding bits
+                dataword = dataword[:-self.cw_padding] # Remove padding bits
         return dataword
 
     def describe(self):
