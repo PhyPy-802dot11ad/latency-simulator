@@ -710,6 +710,7 @@ class FDE_Simple448(BufferedBlock):
     """Self-flagged frequency domain equalization block.
 
     Includes hardcoded properties - designed bearing in mind the succeeding block is the demapper.
+    Forwards entire 448-long sequences to the demapper to reduce number of events.
     """
 
     def __init__(self, block_id, env, log_path, log_subdir, delay, func):
@@ -783,6 +784,7 @@ class Demapper_Simple448(BufferedBlock):
 
     Apart from spawning fictitious llrs from fictitious symbols, doesn't include any further functionality.
     Includes hardcoded properties - designed bearing in mind the succeeding block is the decoder.
+    Works with entire 448-long input sequences to reduce the number of events.
     """
 
     def __init__(self, block_id, env, log_path, log_subdir, delay, func):

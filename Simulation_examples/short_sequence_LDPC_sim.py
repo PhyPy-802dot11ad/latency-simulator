@@ -11,7 +11,7 @@ from multiprocessing import Pool
 
 import numpy as np
 
-from PHY_802dot11ad_latency_sim import simulate, simulate_simplified, RxDbbSimplified448, RxDbb_Flavour2
+from PHY_802dot11ad_latency_sim import simulate, RxDbbScFde, RxDbbScFdeSimplified448
 
 
 # TODO: check that all params are reverted back to those used in WIC paper
@@ -32,12 +32,8 @@ POOL_SIZE = 8 # Set max number of concurrent processes
 log_basepath = os.path.dirname(__file__)
 
 ### Select normal vs. fast simulation
-simulation_function = simulate
-# simplified_simulation = False
-# rx_dbb_reference = RxDbb_Flavour2
-simplified_simulation = True
-rx_dbb_reference = RxDbbSimplified448
-# simulation_function = simulate_simplified
+# rx_dbb_reference = RxDbbScFde; simplified_simulation = False
+rx_dbb_reference = RxDbbScFdeSimplified448; simplified_simulation = True
 
 ### Set simulation arguments
 # MPDU_length_bytes = MAX_MPDU_LENGTH_B
@@ -47,8 +43,11 @@ mcs_array = np.concatenate((
     np.arange(2, 12+1, 1, dtype=float),
     np.array([12.1, 12.3, 12.4, 12.5])
 ))
+# mcs_array = np.array([8.0])
 
-iterations_array = np.arange(1, 100.25, 0.25)
+# iterations_array = np.arange(1, 100.25, 0.25)
+iterations_array = np.array([1,100])
+# iterations_array = np.array([10])
 
 demapping_alg_array = np.array(['decision threshold']) # 'optimal', 'suboptimal', 'decision threshold'
 
@@ -89,8 +88,8 @@ for mcs, decoder_iterations, demapper_delay_instance in combination_list:
 
 # Run processes from pool using the pre-generated arguments
 with Pool(POOL_SIZE) as p:
-    p.starmap(simulation_function, sim_args)
+    p.starmap(simulate, sim_args)
 
 # # Run in single-process for debugging purposes
 # for sa in sim_args:
-#     simulation_function(*sa)
+#     simulate(*sa)
