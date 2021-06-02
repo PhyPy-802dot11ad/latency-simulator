@@ -113,7 +113,7 @@ def simulate( out_path, rx_dbb_reference, MCS, decoder_iterations, demapping_alg
     time_started = dt.now()
 
     # log_subdir = f'{out_id:04}'
-    log_subdir = f'{MCS}_{demapping_algorithm}_{decoder_iterations}'
+    log_subdir = f'{payload_length_bits:07d}B_{MCS}_{demapping_algorithm}_{decoder_iterations}'
 
     if not os.path.exists( os.path.join( out_path, log_subdir) ):
         os.mkdir(os.path.join( out_path, log_subdir ))
@@ -185,42 +185,6 @@ def simulate( out_path, rx_dbb_reference, MCS, decoder_iterations, demapping_alg
     print(metadata['time_started'])
     print(metadata['time_ended'])
     sys.stdout.flush()
-
-
-def sender_simplified(env, rx_dbb, num_of_data_blocks, header_part_of_payload=False):
-    """Generate and yield transmission sequences.
-    Sends entire data blocks to reduce the number of events and speed up execution times
-
-    :param env: SimPy environment
-    :param rx_dbb: Receiver digital baseband object
-    :param num_of_data_blocks: Number of data blocks (448 + 64 symbols)
-    :param header_part_of_payload: Flag indicating whether the header delay is invocated separately (when false)
-    """
-
-    # STF arrival
-    yield env.timeout(STF_LENGTH / SAMPLING_RATE_GHZ)
-
-    # CES arrival
-    yield env.timeout(CES_LENGTH / SAMPLING_RATE_GHZ)
-    rx_dbb.CES_ingress_block.input_data_buffer.put( [None] )
-
-    # Header (no fruther delays taken into account)
-    if not header_part_of_payload:
-        yield env.timeout(HEADER_LENGTH / SAMPLING_RATE_GHZ)
-
-    symbol_block = np.zeros(BLOCK_AND_GI_LENGTH)
-
-    # Payload arrival
-    for k in range(num_of_data_blocks):
-
-        print(f'({dt.now()}) | Sending block {k} of {num_of_data_blocks}.')
-        sys.stdout.flush()
-
-        yield env.timeout(BLOCK_AND_GI_LENGTH / SAMPLING_RATE_GHZ)
-        rx_dbb.PAY_ingress_block.input_data_buffer.put(symbol_block)
-
-    # Last GI delay (FDE and other blocks are based on block + succeeding GI)
-    yield env.timeout(GI_LENGTH / SAMPLING_RATE_GHZ)
 
 
 # def simulate_simplified( out_path, rx_dbb_reference, MCS, decoder_iterations, demapping_algorithm, payload_length_bits ):
