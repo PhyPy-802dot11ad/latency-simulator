@@ -1,25 +1,21 @@
 """
-Simulate the transmission of short payload sequences (100B) for all supported MCSs and 1-25 LDPC decoding iterations.
-
-As used for obtaining the results presented at WIC SITB 2021.
+Simulate transmission of payload sequences ranging 1 to 262 KB in length.
 """
-
 
 import os
 from datetime import datetime as dt
 from multiprocessing import Pool
+import itertools
 
 import numpy as np
 
 from PHY_802dot11ad_latency_sim import simulate, RxDbbScFde, RxDbbScFdeSimplified448
 
 
-# TODO: check that all params are reverted back to those used in WIC paper
-
-
 ### Const ##############################################################################################################
 
 MAX_MPDU_LENGTH_B = 262_143
+MAX_MPDU_LENGTH_KB = 262
 
 
 ### Config #############################################################################################################
@@ -36,18 +32,15 @@ log_basepath = os.path.dirname(__file__)
 rx_dbb_reference = RxDbbScFdeSimplified448; simplified_simulation = True
 
 ### Set simulation arguments
-# MPDU_length_bytes = MAX_MPDU_LENGTH_B
-MPDU_length_bytes = 100
+MPDU_length_bytes = np.arange(1,MAX_MPDU_LENGTH_KB+1,1) * 1000
+# MPDU_length_bytes = np.arange(1,10,1)
 
 mcs_array = np.concatenate((
     np.arange(2, 12+1, 1, dtype=float),
     np.array([12.1, 12.3, 12.4, 12.5])
 ))
-# mcs_array = np.array([8.0])
 
-# iterations_array = np.arange(1, 100.25, 0.25)
-iterations_array = np.array([1,100])
-# iterations_array = np.array([10])
+iterations_array = np.array([1,10])
 
 demapping_alg_array = np.array(['decision threshold']) # 'optimal', 'suboptimal', 'decision threshold'
 
@@ -63,18 +56,16 @@ np.random.seed(0) # Reset random
 
 payload_length_bits = MPDU_length_bytes * 8
 
-# Define all possible MCS, iteration, and demapping algorithm combinations
-combination_list = []
-for mcs in mcs_array:
-    for demapping_alg in demapping_alg_array:
-        for iterations in iterations_array:
-            combination_list.append((mcs, iterations, demapping_alg))
+# Define all possible combinations
+combinations = itertools.product(payload_length_bits, mcs_array, iterations_array, demapping_alg_array)
 
-print(f'Starting simultaions for {len(combination_list)} combinations.')
+_len = payload_length_bits.size * mcs_array.size * iterations_array.size * demapping_alg_array.size
+print(f'Starting simultaions for {_len} combinations.')
 
 # Translate the possible combinations into simulation arguments
 sim_args = []
-for mcs, decoder_iterations, demapper_delay_instance in combination_list:
+# for payload_length_bits, mcs, decoder_iterations, demapper_delay_instance in combination_list:
+for payload_length_bits, mcs, decoder_iterations, demapper_delay_instance in combinations:
     tmp_args = [
         out_path,
         rx_dbb_reference,
@@ -89,7 +80,3 @@ for mcs, decoder_iterations, demapper_delay_instance in combination_list:
 # Run processes from pool using the pre-generated arguments
 with Pool(POOL_SIZE) as p:
     p.starmap(simulate, sim_args)
-
-# # Run in single-process for debugging purposes
-# for sa in sim_args:
-#     simulate(*sa)
